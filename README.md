@@ -10,16 +10,7 @@ Before running this application, make sure you have the following installed:
 You can install the necessary libraries using pip:
 pip install opencv-python mediapipe
 
-Setup
-1. Clone the repository:
-   git clone https://your-repository-url.git
-   cd your-repository-directory
    
-
-2. Run the application:
-   To start the posture detection, execute:
-   python posture_detection.py
-
 Features
 - Real-time posture detection: Utilizes webcam data to analyze and display the posture dynamically.
 - Angle calculations: Calculates angles to determine the correctness of the posture.

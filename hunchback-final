@@ -1,0 +1,67 @@
+import cv2
+import mediapipe as mp
+import time
+import math
+
+# Initialize MediaPipe Pose model
+mp_pose = mp.solutions.pose
+pose = mp_pose.Pose()
+
+# Function to calculate angle between three points
+def calculate_angle(a, b, c):
+    a = np.array(a)  # First
+    b = np.array(b)  # Mid
+    c = np.array(c)  # End
+    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
+    angle = np.abs(radians * 180.0 / np.pi)
+    if angle > 180.0:
+        angle = 360 - angle
+    return angle
+
+# Function to detect posture
+def analyze_posture(image, landmarks):
+    # Coordinates for the landmarks
+    shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
+    elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
+    wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
+
+    # Calculate angle
+    angle = calculate_angle(shoulder, elbow, wrist)
+
+    # Draw angle
+    cv2.putText(image, str(angle), tuple(np.multiply(elbow, [640, 480]).astype(int)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+
+    return image
+
+# Setup capture from the webcam
+cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print("Error: Camera could not be opened.")
+    exit()
+
+# Read frames from the webcam
+while cap.isOpened():
+    success, frame = cap.read()
+    if not success:
+        print("Ignoring empty camera frame.")
+        continue
+
+    # Flip the image horizontally for a later selfie-view display
+    image = cv2.flip(frame, 1)
+    # To improve performance, optionally mark the image as not writeable to pass by reference.
+    image.flags.writeable = False
+    results = pose.process(image)
+
+    # Draw the pose annotation on the image.
+    image.flags.writeable = True
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    if results.pose_landmarks:
+        image = analyze_posture(image, results.pose_landmarks.landmark)
+
+    # Display the resulting frame
+    cv2.imshow('MediaPipe Pose', image)
+    if cv2.waitKey(5) & 0xFF == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()

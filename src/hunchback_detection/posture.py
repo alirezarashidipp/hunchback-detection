@@ -1,95 +1,92 @@
-"""Utilities for computing body angles and classifying posture.
-
-This module defines helper functions to compute the angle between three
-points and classify the resulting posture as either ``"good"`` or
-``"bad"`` based on a configurable threshold.  A dataclass is used to
-bundle angle and classification results together.
-
-Example:
-
-    >>> from hunchback_detection.posture import calculate_angle, classify_posture
-    >>> angle = calculate_angle((1, 0), (0, 0), (0, 1))
-    >>> status = classify_posture(angle, threshold=160)
-    >>> print(angle, status)
-    90.0 'bad'
-
-These functions are unit-tested in ``tests/test_posture.py``.
-"""
+"""Framework-independent posture geometry and classification."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterable, Sequence, Tuple
 import math
-import numpy as np
+from dataclasses import dataclass
+from enum import Enum
+from typing import Sequence
 
+import numpy as np
+from numpy.typing import NDArray
 
 Number = float | int
-Point = Tuple[Number, Number]  # alias for 2D point
+Point = tuple[Number, Number]
+
+MIN_THRESHOLD = 60.0
+MAX_THRESHOLD = 180.0
 
 
-@dataclass
+class PostureStatus(str, Enum):
+    """Stable machine-readable posture classifications."""
+
+    GOOD = "good"
+    BAD = "bad"
+
+
+@dataclass(frozen=True, slots=True)
 class PostureResult:
-    """Container for posture analysis results.
-
-    Attributes:
-        angle: The measured angle in degrees at the shoulder, formed by the
-            line segments ear–shoulder and shoulder–hip.
-        status: A string, either ``"good"`` if the angle is above the
-            threshold or ``"bad"`` otherwise.
-    """
+    """The angle measured at the shoulder and its classification."""
 
     angle: float
-    status: str
+    status: PostureStatus
 
 
-def calculate_angle(p1: Sequence[Number], p2: Sequence[Number], p3: Sequence[Number]) -> float:
-    """Compute the angle (in degrees) between three points at ``p2``.
+def validate_threshold(value: float) -> float:
+    """Return a safe posture threshold or raise a clear validation error."""
+    threshold = float(value)
+    if not math.isfinite(threshold) or not MIN_THRESHOLD <= threshold <= MAX_THRESHOLD:
+        raise ValueError("threshold must be between 60 and 180 degrees")
+    return threshold
 
-    The function treats the three inputs as vectors in 2D space and
-    computes the angle between the vectors ``p1 - p2`` and ``p3 - p2``.  It
-    returns the smaller of the two possible angles between the vectors,
-    normalized to the range [0, 180].  If any vector has zero length, the
-    function returns 180 to indicate a straight line.
 
-    Args:
-        p1: Coordinates of the first point.
-        p2: Coordinates of the vertex point.
-        p3: Coordinates of the third point.
+def _as_point(value: Sequence[Number], name: str) -> NDArray[np.float64]:
+    """Convert a public point value to a finite two-dimensional array."""
+    point = np.asarray(value, dtype=float)
+    if point.shape != (2,) or not np.isfinite(point).all():
+        raise ValueError(f"{name} must be a finite 2D point")
+    return point
 
-    Returns:
-        The angle at ``p2`` in degrees.
+
+def calculate_angle(
+    p1: Sequence[Number],
+    p2: Sequence[Number],
+    p3: Sequence[Number],
+) -> float:
+    """Calculate the smaller angle at ``p2`` in degrees.
+
+    Coincident points are rejected because they do not define an angle and
+    must never be interpreted as good posture.
     """
-    a = np.array(p1, dtype=float) - np.array(p2, dtype=float)
-    b = np.array(p3, dtype=float) - np.array(p2, dtype=float)
-    # compute norms
-    norm_a = np.linalg.norm(a)
-    norm_b = np.linalg.norm(b)
-    if norm_a == 0 or norm_b == 0:
-        # If either vector has zero length, we cannot define an angle;
-        # treat as straight line (180°) so that posture is considered good.
-        return 180.0
-    # compute cosine of angle using dot product formula
-    cos_theta = float(np.dot(a, b) / (norm_a * norm_b))
-    # Numerical errors could push cos_theta slightly outside [-1, 1]
-    cos_theta = max(min(cos_theta, 1.0), -1.0)
-    angle_rad = math.acos(cos_theta)
-    angle_deg = math.degrees(angle_rad)
-    return angle_deg
+    first = _as_point(p1, "p1")
+    vertex = _as_point(p2, "p2")
+    third = _as_point(p3, "p3")
+
+    vector_a = first - vertex
+    vector_b = third - vertex
+    norm_a = float(np.linalg.norm(vector_a))
+    norm_b = float(np.linalg.norm(vector_b))
+    if norm_a == 0.0 or norm_b == 0.0:
+        raise ValueError("angle points must be distinct from the vertex")
+
+    cosine = float(np.dot(vector_a, vector_b) / (norm_a * norm_b))
+    bounded_cosine = max(-1.0, min(1.0, cosine))
+    return math.degrees(math.acos(bounded_cosine))
 
 
-def classify_posture(angle: float, threshold: float = 160.0) -> str:
-    """Classify posture quality based on the measured angle.
+def classify_posture(
+    angle: float,
+    threshold: float = 160.0,
+) -> PostureStatus:
+    """Classify an angle using an inclusive validated threshold."""
+    measured_angle = float(angle)
+    if not math.isfinite(measured_angle) or not 0.0 <= measured_angle <= 180.0:
+        raise ValueError("angle must be between 0 and 180 degrees")
 
-    Args:
-        angle: The angle (in degrees) between ear–shoulder and shoulder–hip.
-        threshold: The minimum angle considered a good posture.  Angles
-            below this threshold are classified as ``"bad"``.
-
-    Returns:
-        ``"good"`` if ``angle >= threshold``, otherwise ``"bad"``.
-    """
-    return "good" if angle >= threshold else "bad"
+    safe_threshold = validate_threshold(threshold)
+    if measured_angle >= safe_threshold:
+        return PostureStatus.GOOD
+    return PostureStatus.BAD
 
 
 def analyze_points(
@@ -99,21 +96,7 @@ def analyze_points(
     *,
     threshold: float = 160.0,
 ) -> PostureResult:
-    """Compute the angle between three points and classify the result.
-
-    This helper calls :func:`calculate_angle` and :func:`classify_posture`
-    and returns a :class:`PostureResult` with both the angle and the
-    classification.
-
-    Args:
-        p1: First point.
-        p2: Vertex point.
-        p3: Third point.
-        threshold: Classification threshold.
-
-    Returns:
-        A :class:`PostureResult` containing the angle and classification.
-    """
+    """Measure and classify one ear-shoulder-hip point set."""
     angle = calculate_angle(p1, p2, p3)
     status = classify_posture(angle, threshold)
     return PostureResult(angle=angle, status=status)

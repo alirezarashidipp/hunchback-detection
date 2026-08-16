@@ -11,4 +11,20 @@ webcam or video file.
 # avoid pulling heavy dependencies like Mediapipe at import time.  To use
 # the video streaming utilities, import them directly from
 # ``hunchback_detection.video_stream``.
-from .posture import PostureResult, calculate_angle, classify_posture  # noqa: F401
+from .posture import (
+    PostureResult,
+    PostureStatus,
+    analyze_points,
+    calculate_angle,
+    classify_posture,
+    validate_threshold,
+)
+
+__all__ = [
+    "PostureResult",
+    "PostureStatus",
+    "analyze_points",
+    "calculate_angle",
+    "classify_posture",
+    "validate_threshold",
+]

@@ -81,6 +81,29 @@ def test_home_identifies_the_product(client: TestClient) -> None:
     assert "Posture Coach" in response.text
 
 
+def test_home_serves_the_local_camera_application(client: TestClient) -> None:
+    response = client.get("/")
+
+    assert 'id="camera-video"' in response.text
+    assert 'href="/static/css/tokens.css"' in response.text
+    assert 'src="/static/js/app.js"' in response.text
+    assert "fonts.googleapis.com" not in response.text
+
+
+def test_static_design_assets_are_packaged(client: TestClient) -> None:
+    response = client.get("/static/css/app.css")
+
+    assert response.status_code == 200
+    assert response.text.startswith("/* Hallmark")
+
+
+def test_home_declares_a_local_favicon(client: TestClient) -> None:
+    home = client.get("/")
+
+    assert 'href="/static/assets/favicon.svg"' in home.text
+    assert client.get("/static/assets/favicon.svg").status_code == 200
+
+
 def test_websocket_rejects_unknown_message_type(client: TestClient) -> None:
     with client.websocket_connect("/ws/analyze") as websocket:
         websocket.send_json({"type": "other"})

@@ -8,11 +8,13 @@ import binascii
 import io
 import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 
 from .posture import validate_threshold
@@ -21,6 +23,9 @@ from .vision import FrameAnalysis, PoseDetector
 MAX_IMAGE_BYTES = 1_000_000
 MAX_MESSAGE_CHARACTERS = 1_400_000
 JPEG_DATA_PREFIX = "data:image/jpeg;base64,"
+PACKAGE_DIRECTORY = Path(__file__).resolve().parent
+STATIC_DIRECTORY = PACKAGE_DIRECTORY / "static"
+INDEX_TEMPLATE = PACKAGE_DIRECTORY / "templates" / "index.html"
 
 
 class Analyzer(Protocol):
@@ -152,14 +157,15 @@ def create_app(analyzer_factory: AnalyzerFactory = PoseDetector) -> FastAPI:
         docs_url=None,
         redoc_url=None,
     )
+    app.mount("/static", StaticFiles(directory=STATIC_DIRECTORY), name="static")
 
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/", response_class=HTMLResponse)
-    async def home() -> str:
-        return "<main><h1>Posture Coach</h1></main>"
+    @app.get("/", response_class=FileResponse)
+    async def home() -> Path:
+        return INDEX_TEMPLATE
 
     @app.websocket("/ws/analyze")
     async def analyze_websocket(websocket: WebSocket) -> None:

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Private, local-first live posture feedback in your browser.">
+    <title>Posture Coach — Local live posture feedback</title>
+    <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script type="module" src="/static/js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workbench">Skip to camera controls</a>
+
+    <header class="page-shell nav-edge">
+      <a class="wordmark" href="/" aria-label="Posture Coach home">
+        <span class="wordmark__mark" aria-hidden="true">P</span>
+        <span>Posture Coach</span>
+      </a>
+      <a class="nav-edge__link" href="#privacy">Privacy</a>
+    </header>
+
+    <main class="page-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <h1 id="page-title">Posture feedback. Kept local.</h1>
+        <p>Calibrate once, then see your shoulder angle and sitting pattern update as you work.</p>
+        <div class="privacy-note">
+          <span class="privacy-note__mark" aria-hidden="true"></span>
+          <span>Frames are processed in memory and are never saved. Session numbers disappear when this page closes.</span>
+        </div>
+      </section>
+
+      <section class="workbench" id="workbench" aria-label="Live posture workbench">
+        <article class="camera-panel">
+          <header class="camera-panel__bar">
+            <span>Live camera</span>
+            <span class="connection-state" id="connection-state" data-state="idle">Offline</span>
+          </header>
+
+          <div class="controls">
+            <button class="button button--primary" id="start-button" type="button">Start camera</button>
+            <button class="button" id="stop-button" type="button" disabled>Stop</button>
+            <button class="button" id="calibrate-button" type="button" disabled>Recalibrate</button>
+          </div>
+
+          <div class="camera-stage" id="camera-stage" data-active="false">
+            <video id="camera-video" autoplay muted playsinline aria-label="Live camera preview"></video>
+            <canvas id="pose-overlay" aria-hidden="true"></canvas>
+            <div class="camera-stage__empty" id="camera-empty">
+              <div class="camera-stage__guide" aria-hidden="true"></div>
+              <strong>Place your upper body in frame.</strong>
+              <span>Your ear, shoulder, and hip should remain visible from the side.</span>
+            </div>
+          </div>
+
+        </article>
+
+        <aside class="instrument-panel" aria-label="Live posture readings">
+          <section aria-labelledby="current-reading-title">
+            <h2 id="current-reading-title">Current reading</h2>
+            <div class="status-readout" id="status-readout" data-state="idle" role="status" aria-live="polite">
+              <span class="status-readout__dot" aria-hidden="true"></span>
+              <span id="status-text">Camera is off</span>
+            </div>
+            <div>
+              <div class="calibration-progress" role="progressbar" aria-label="Calibration progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="calibration-progress">
+                <div class="calibration-progress__bar" id="calibration-bar"></div>
+              </div>
+              <p id="calibration-text">Start the camera to begin calibration.</p>
+            </div>
+          </section>
+
+          <section aria-labelledby="session-title">
+            <h2 id="session-title">This session</h2>
+            <dl class="metrics">
+              <div class="metric">
+                <dt>Shoulder angle</dt>
+                <dd id="angle-value">—</dd>
+              </div>
+              <div class="metric">
+                <dt>Personal threshold</dt>
+                <dd id="threshold-value">—</dd>
+              </div>
+              <div class="metric">
+                <dt>Good posture</dt>
+                <dd id="good-value">0%</dd>
+              </div>
+              <div class="metric">
+                <dt>Needs attention</dt>
+                <dd id="attention-value">00:00</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+      </section>
+
+      <section class="method" id="privacy" aria-labelledby="privacy-title">
+        <h2 id="privacy-title">A wellness signal, not a diagnosis.</h2>
+        <p>This tool estimates one visible body angle and cannot assess pain, injury, spinal conditions, or medical risk. Stop if using it causes discomfort and speak with a qualified clinician about health concerns.</p>
+      </section>
+    </main>
+
+    <footer class="page-shell foot-line">
+      <p>Posture Coach · Local-first · MIT licensed</p>
+      <p>No accounts. No database. No saved camera frames.</p>
+    </footer>
+  </body>
+</html>

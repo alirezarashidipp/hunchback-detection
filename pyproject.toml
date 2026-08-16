@@ -52,6 +52,7 @@ hunchback-web = "hunchback_detection.web:run_web_cli"
 
 [tool.setuptools.package-data]
 hunchback_detection = [
+    "static/assets/*.svg",
     "static/css/*.css",
     "static/js/*.js",
     "templates/*.html",

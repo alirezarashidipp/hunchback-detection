@@ -23,7 +23,7 @@ classifiers = [
 dependencies = [
     "fastapi>=0.115,<1",
     "mediapipe==0.10.21",
-    "numpy>=1.26,<2",
+    "numpy>=1.26,<3",
     "opencv-contrib-python>=4.9,<5",
     "pillow>=10,<13",
     "uvicorn[standard]>=0.30,<1",

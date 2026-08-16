@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import Enum
-from typing import Sequence
+from enum import StrEnum
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,7 +17,7 @@ MIN_THRESHOLD = 60.0
 MAX_THRESHOLD = 180.0
 
 
-class PostureStatus(str, Enum):
+class PostureStatus(StrEnum):
     """Stable machine-readable posture classifications."""
 
     GOOD = "good"

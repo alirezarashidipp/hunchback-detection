@@ -15,6 +15,7 @@ import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from numpy.typing import NDArray
 from PIL import Image, UnidentifiedImageError
 
 from .posture import validate_threshold
@@ -31,7 +32,7 @@ INDEX_TEMPLATE = PACKAGE_DIRECTORY / "templates" / "index.html"
 class Analyzer(Protocol):
     """Frame analyzer contract used by each WebSocket connection."""
 
-    def analyze(self, frame: np.ndarray, threshold: float) -> FrameAnalysis: ...
+    def analyze(self, frame: NDArray[np.uint8], threshold: float) -> FrameAnalysis: ...
 
     def close(self) -> None: ...
 
@@ -43,10 +44,8 @@ def _error(code: str, message: str) -> dict[str, str]:
     return {"type": "error", "code": code, "message": message}
 
 
-def _decode_frame(image_value: object) -> np.ndarray:
-    if not isinstance(image_value, str) or not image_value.startswith(
-        JPEG_DATA_PREFIX
-    ):
+def _decode_frame(image_value: object) -> NDArray[np.uint8]:
+    if not isinstance(image_value, str) or not image_value.startswith(JPEG_DATA_PREFIX):
         raise ValueError("image must be a JPEG data URL")
 
     encoded = image_value.removeprefix(JPEG_DATA_PREFIX)

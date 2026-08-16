@@ -8,6 +8,7 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      - dependency-name: mediapipe
   - package-ecosystem: github-actions
     directory: /
     schedule:

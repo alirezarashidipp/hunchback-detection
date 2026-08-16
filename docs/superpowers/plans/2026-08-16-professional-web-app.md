@@ -331,7 +331,9 @@ def test_run_video_rejects_missing_input(tmp_path):
         run_video(str(missing))
 
 
-def test_run_stream_releases_capture_when_analysis_fails(fake_capture, failing_detector):
+def test_run_stream_releases_capture_when_analysis_fails(
+    fake_capture, failing_detector
+):
     with pytest.raises(RuntimeError):
         run_stream(fake_capture, detector=failing_detector)
     assert fake_capture.released is True
@@ -377,6 +379,7 @@ git commit -m "refactor: share analysis engine with cli"
 ```python
 def test_web_app_can_be_created() -> None:
     from hunchback_detection.web import create_app
+
     assert create_app().title == "Posture Coach"
 ```
 
@@ -430,11 +433,21 @@ git commit -m "build: add hardened local Docker runtime"
 - [ ] **Step 1: Add a documentation contract test**
 
 ```python
-@pytest.mark.parametrize("path", [
-    "README.md", "AGENTS.md", "CONTRIBUTING.md", "SECURITY.md",
-    "CHANGELOG.md", "docs/architecture.md", "docs/privacy.md",
-    "docs/calibration.md", "docs/troubleshooting.md", "docs/development.md",
-])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "CHANGELOG.md",
+        "docs/architecture.md",
+        "docs/privacy.md",
+        "docs/calibration.md",
+        "docs/troubleshooting.md",
+        "docs/development.md",
+    ],
+)
 def test_required_document_exists(path: str) -> None:
     assert Path(path).is_file()
 ```

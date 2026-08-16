@@ -6,6 +6,7 @@ module.  Keeping a separate script allows users to call the program
 directly without having to know the package internals.  It is also
 useful for packaging and installation via ``pip``.
 """
+
 from hunchback_detection.video_stream import run_live_cli
 
 

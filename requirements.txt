@@ -1,4 +1,2 @@
-mediapipe>=0.10.0
-opencv-python>=4.6
-numpy>=1.21
-pytest>=7.0
+# Compatibility entry point. Project dependencies live in pyproject.toml.
+-e .[dev]

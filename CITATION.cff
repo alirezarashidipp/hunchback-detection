@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using this metadata.
+title: Posture Coach
+type: software
+authors:
+  - family-names: Rashidi
+    given-names: Ali Reza
+repository-code: https://github.com/alirezarashidipp/hunchback-detection
+url: https://github.com/alirezarashidipp/hunchback-detection
+license: MIT
+version: 0.1.0
+date-released: 2026-08-16
+keywords:
+  - posture
+  - computer-vision
+  - mediapipe
+  - fastapi
+  - local-first

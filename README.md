@@ -1,117 +1,145 @@
-# Hunchback Detection
+# Posture Coach
 
-This project implements a real‑time posture detection system using MediaPipe and
-OpenCV.  It calculates key body angles from a webcam or video stream and
-classifies whether the posture is good or indicative of a forward head (i.e.
-hunchback) posture.  The original repository consisted of a single script with
-no tests, packaging or documentation.  This refactor introduces a modular
-Python package, command‑line utilities, a notebook demo and continuous
-integration so that you can easily extend and maintain the project.
+[![CI](https://github.com/alirezarashidipp/hunchback-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/alirezarashidipp/hunchback-detection/actions/workflows/ci.yml)
+[![Python 3.11–3.12](https://img.shields.io/badge/python-3.11%E2%80%933.12-2563eb)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-111827)](LICENSE)
 
-## Features
+Private, local-first posture feedback from a live browser camera. Posture Coach
+uses MediaPipe and FastAPI to estimate an ear–shoulder–hip angle, personalize a
+baseline, and show bad-posture duration and session statistics without saving
+images.
 
-* **Real‑time detection** – process live webcam frames or pre‑recorded video
-  files using MediaPipe's pose estimation and OpenCV for rendering.
-* **Angle calculation** – compute the angle between the ear, shoulder and hip
-  landmarks to assess back posture.  Angles close to 180° indicate an upright
-  posture while smaller angles correspond to a hunched position.
-* **Posture classification** – a configurable threshold classifies the
-  measured angle as **good** or **bad**.  The classification and angle are
-  overlaid on the video for immediate feedback.
-* **Modular API** – reusable functions in `hunchback_detection/posture.py`
-  calculate angles and perform classification.  A simple dataclass holds
-  posture results.
-* **Command‑line scripts** – run the live detection (`scripts/run_live.py`) or
-  process a video file (`scripts/run_video.py`) without writing any code.
-* **Tests** – unit tests in `tests/test_posture.py` verify angle
-  calculations and classification logic.
-* **Continuous integration** – a GitHub Actions workflow runs the test suite
-  automatically on each push.
-* **Packaging** – a `pyproject.toml` provides metadata and exposes
-  entry‑points for command‑line usage.
+![Posture Coach desktop preview](docs/assets/posture-coach-preview.png)
 
-## Installation
+## Why this project
 
-You will need Python 3.8 or later.  Create a virtual environment and
-install the dependencies:
+- **Live browser experience:** camera preview, pose overlay, current angle, and
+  immediate posture state.
+- **Personal calibration:** a short baseline adapts feedback to the person and
+  camera placement.
+- **Session awareness:** tracks poor-posture time and upright percentage for the
+  current tab.
+- **Local-first privacy:** frames travel only between the browser and the local
+  FastAPI process, are analyzed in memory, and are never written to disk.
+- **Two interfaces:** a polished web app plus webcam and video-file CLI tools.
+- **Production-minded foundation:** typed modules, automated tests, CI, a
+  non-root read-only container, health checks, and contributor documentation.
+
+> Posture Coach is an educational wellness tool, not a medical device. It does
+> not diagnose, treat, or prevent any condition.
+
+## Quick start with Docker
+
+Docker Desktop is the only prerequisite.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+docker compose up --build
 ```
 
-MediaPipe depends on additional system libraries; consult the
-[MediaPipe installation guide](https://google.github.io/mediapipe/getting_started/install.html)
-if you encounter build errors.  On Linux you may need to install `libgl1` or
-similar packages for OpenCV.
-
-## Usage
-
-### Live webcam detection
-
-To start real‑time posture detection from your webcam, run:
+Open [http://localhost:8000](http://localhost:8000), select **Start camera**, and
+allow camera access. Stop the app with:
 
 ```bash
-python scripts/run_live.py --threshold 160
+docker compose down
 ```
 
-The `threshold` determines the angle (in degrees) below which the posture is
-classified as **bad**.  Try values between 150 and 170 to find an
-appropriate setting for your environment.
+The service binds to `127.0.0.1` only. The container runs as an unprivileged
+user with a read-only filesystem.
 
-### Video file detection
+## Native development
 
-To analyse an existing video, specify the path to the file:
+MediaPipe supports Python 3.11 and 3.12 for this project.
 
 ```bash
-python scripts/run_video.py --input-path path/to/video.mp4 --threshold 160
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+hunchback-web
 ```
 
-The processed video will be displayed frame‑by‑frame with overlays.  To
-write the annotated output to disk, pass `--output-path output.mp4`.
+Then open [http://localhost:8000](http://localhost:8000). Browser camera access
+works on localhost or a secure HTTPS origin.
 
-### Library usage
+## CLI
 
-The underlying functions can be imported into your own programs:
+Use a directly connected webcam:
 
-```python
-from hunchback_detection.posture import calculate_angle, classify_posture
-
-# Compute the angle at the origin for three points forming a right angle
-angle = calculate_angle((1, 0), (0, 0), (0, 1))
-posture = classify_posture(angle, threshold=160)
-print(angle, posture)
+```bash
+hunchback-live --threshold 160
 ```
 
-## Project structure
+Analyze a local video and optionally write an annotated copy:
 
-```
-hunchback_detection/
-├── README.md
-├── LICENSE
-├── pyproject.toml
-├── requirements.txt
-├── scripts/
-│   ├── run_live.py          # Run live webcam posture detection
-│   └── run_video.py         # Run posture detection on a video file
-├── src/
-│   └── hunchback_detection/
-│       ├── __init__.py
-│       ├── posture.py       # Angle calculation and posture classification
-│       └── video_stream.py  # Functions to run detection on webcam/video
-├── tests/
-│   └── test_posture.py      # Unit tests for the core logic
-├── notebooks/
-│   └── posture_detection_demo.ipynb  # Example notebook (optional)
-└── .github/workflows/python-app.yml  # CI pipeline
+```bash
+hunchback-video --input-path input.mp4 --output-path annotated.mp4 --threshold 160
 ```
 
-## Contributing
+Press `q` to close an OpenCV preview window. Run either command with `--help`
+for all options.
 
-Contributions are welcome!  Please open an issue to discuss your idea, or
-submit a pull request with your improvements.
+## How it works
+
+```text
+Browser camera -> compressed JPEG frame -> local WebSocket -> MediaPipe pose
+              <- angle, landmarks, status <- in-memory analysis <-
+```
+
+The detector measures the angle formed by the left ear, shoulder, and hip. The
+browser collects a short set of valid
+readings, derives a personal threshold from their median, and keeps all timing
+and summary data in memory for the current page session.
+
+See [Architecture](docs/architecture.md), [Calibration](docs/calibration.md),
+and [Privacy](docs/privacy.md) for the detailed contracts.
+
+## Quality checks
+
+```bash
+python -m ruff format --check .
+python -m ruff check .
+python -m mypy
+python -m pytest --cov=hunchback_detection --cov-report=term-missing
+node --test tests/js/*.test.mjs
+python -m build
+docker compose build
+```
+
+## Project map
+
+```text
+src/hunchback_detection/
+├── posture.py       # geometry and classification
+├── vision.py        # MediaPipe frame analysis
+├── video_stream.py  # webcam and video CLI
+├── web.py           # FastAPI HTTP and WebSocket app
+├── static/          # modular CSS and JavaScript
+└── templates/       # accessible web shell
+tests/               # Python and browser-logic tests
+docs/                # architecture, privacy, calibration, and operations
+```
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Privacy model](docs/privacy.md)
+- [Calibration guide](docs/calibration.md)
+- [Development guide](docs/development.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Security policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+
+## Limitations
+
+- Side-on framing with the ear, shoulder, and hip visible produces the most
+  useful signal.
+- Loose clothing, occlusion, low light, and camera perspective can reduce pose
+  quality.
+- A single geometric threshold is an ergonomic prompt, not clinical evidence.
+- Session statistics reset when the page is refreshed or closed.
 
 ## License
 
-Distributed under the MIT License.  See `LICENSE` for details.
+Released under the [MIT License](LICENSE).

@@ -25,7 +25,7 @@ dependencies = [
     "mediapipe==0.10.21",
     "numpy>=1.26,<2",
     "opencv-contrib-python>=4.9,<5",
-    "pillow>=10,<13",
+    "pillow>=10,<14",
     "uvicorn[standard]>=0.30,<1",
 ]
 
